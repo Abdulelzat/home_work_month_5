@@ -30,5 +30,7 @@ class Review(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name="reviews")
     stars = models.PositiveIntegerField(choices=STARS, null=True, blank=True)
 
+
+
     def __str__(self):
         return f"Review for {self.movie.title}"
