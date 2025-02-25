@@ -1,13 +1,97 @@
 from rest_framework.decorators import api_view
+from rest_framework.generics import ListCreateAPIView
 from rest_framework.response import Response
 from movie_app.models import Director, Movie, Review
 from movie_app.serializers import DirectorSerializer, MovieSerializer, ReviewSerializer, DirectorValidateSerializer, \
     MovieValidateSerializer, ReviewValidateSerializer
-from rest_framework import status
+from rest_framework import status, viewsets, generics
 from django.db import transaction
 
 
+class DirectorListAPIView(ListCreateAPIView):
+    serializer_class = DirectorSerializer
+    queryset = Director.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        serializer = DirectorValidateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # step 1: Receive data from RequestsBody
+        name = serializer.validated_data.get('name')
+        # step 2: Create product
+        with transaction.atomic():
+            director = Director.objects.create(name=name)
+        # step 3: Return response as data and status
+        return Response(data={'director_id': director.id}, status=status.HTTP_201_CREATED)
+
+
+class DirectorDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = DirectorSerializer
+    queryset = Director.objects.all()
+    lookup_field = 'id'
+
+
+class MovieListAPIView(ListCreateAPIView):
+    serializer_class = MovieSerializer
+    queryset = Movie.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        serializer = MovieValidateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # step 1: Receive data from RequestsBody
+        title = serializer.validated_data.get('title')
+        description = serializer.validated_data.get('description')
+        duration = serializer.validated_data.get('duration')
+        director_id = serializer.validated_data.get('director_id')
+        # step 2: Create product
+        movie = Movie.objects.create(
+            title=title,
+            description=description,
+            duration=duration,
+            director_id=director_id,
+        )
+        # step 3: Return response as data and status
+        return Response(data={'movie_id': movie.id}, status=status.HTTP_201_CREATED)
+
+
+class MovieDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = MovieSerializer
+    queryset = Movie.objects.all()
+    lookup_field = 'id'
+
+
+class ReviewListAPIView(ListCreateAPIView):
+    serializer_class = ReviewSerializer
+    queryset = Review.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        serializer = ReviewValidateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # step 1: Receive data from RequestsBody
+        text = serializer.validated_data.get('text')
+        movie_id = serializer.validated_data.get('movie_id')
+        stars = serializer.validated_data.get('stars')
+        # step 2: Create product
+        review = Review.objects.create(
+            text=text,
+            movie_id=movie_id,
+            stars=stars,
+        )
+        # step 3: Return response as data and status
+        return Response(data={'review_id': review.id}, status=status.HTTP_201_CREATED)
+
+
+class ReviewDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = ReviewSerializer
+    queryset = Review.objects.all()
+    lookup_field = 'id'
+
+
 # ---------------- Director --------------
+
+
 @api_view(http_method_names=['GET', 'POST'])
 def director_list_create_api_view(request):
     if request.method == 'GET':
